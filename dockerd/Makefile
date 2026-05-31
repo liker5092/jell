@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dockerd
 PKG_VERSION:=29.5.2
-PKG_RELEASE:=155
+PKG_RELEASE:=1
 PKG_LICENSE:=Apache-2.0
 PKG_LICENSE_FILES:=LICENSE
 
@@ -10,7 +10,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_GIT_URL:=github.com/moby/moby
 PKG_GIT_REF:=docker-v$(PKG_VERSION)
 PKG_SOURCE_URL:=https://codeload.$(PKG_GIT_URL)/tar.gz/$(PKG_GIT_REF)?
-PKG_HASH:=skip
+PKG_HASH:=1235ed325d324c76f52e52beaa1dac85c92a073bf2f9fcc5bb9f67e35a668028
 PKG_GIT_SHORT_COMMIT:=$(shell $(CURDIR)/git-short-commit.sh '$(PKG_GIT_URL)' '$(PKG_GIT_REF)' '$(TMP_DIR)/git-short-commit/$(PKG_NAME)-$(PKG_VERSION)')
 
 PKG_MAINTAINER:=Gerard Ryan <G.M0N3Y.2503@gmail.com>
@@ -34,7 +34,7 @@ define Package/dockerd
   TITLE:=Docker Community Edition Daemon
   URL:=https://www.docker.com/
   DEPENDS:=$(GO_ARCH_DEPENDS) \
-    +ca-certificates \
+    +ca-bundle \
     +containerd \
     +iptables \
     +iptables-mod-extra \
@@ -47,8 +47,6 @@ define Package/dockerd
     +kmod-veth \
     +tini \
     +uci-firewall \
-    +fuse-overlayfs \
-    +kmod-vxlan +kmod-macvlan +kmod-dummy +kmod-crypto-gcm +kmod-crypto-seqiv +kmod-crypto-ghash +kmod-ipsec +kmod-nf-nathelper +kmod-nf-nathelper-extra +btrfs-progs \
     @!(mips||mips64||mipsel)
   USERID:=docker:docker
   MENU:=1
@@ -96,13 +94,13 @@ define Build/Prepare
 	$(Build/Prepare/Default)
 
 	# Verify dependencies are the vendored version
-	$(call EnsureVendoredVersion,../../packages/utils/containerd/Makefile,containerd.installer)
-	$(call EnsureVendoredVersion,../../packages/utils/runc/Makefile,runc.installer)
-	$(call EnsureVendoredVersion,../../packages/utils/tini/Makefile,tini.installer)
+	$(call EnsureVendoredVersion,../containerd/Makefile,containerd.installer)
+	$(call EnsureVendoredVersion,../runc/Makefile,runc.installer)
+	$(call EnsureVendoredVersion,../tini/Makefile,tini.installer)
 
 	# Verify CLI is the same version
 	( \
-		CLI_MAKEFILE="../../packages/utils/docker/Makefile"; \
+		CLI_MAKEFILE="../docker/Makefile"; \
 		CLI_VERSION=$$$$( grep --only-matching --perl-regexp '(?<=PKG_VERSION:=)(.*)' "$$$${CLI_MAKEFILE}" ); \
 		if [ "$$$${CLI_VERSION}" != "$(PKG_VERSION)" ]; then \
 			echo "ERROR: Expected 'PKG_VERSION:=$(PKG_VERSION)' in '$$$${CLI_MAKEFILE}', found 'PKG_VERSION:=$$$${CLI_VERSION}'"; \
@@ -143,9 +141,6 @@ define Package/dockerd/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bundles/binary-daemon/dockerd $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bundles/binary-daemon/docker-proxy $(1)/usr/bin/
-
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/dockerd.uci-defaults $(1)/etc/uci-defaults/dockerd
 
 	$(INSTALL_DIR) $(1)/opt/docker/
 

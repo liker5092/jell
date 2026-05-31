@@ -19,11 +19,11 @@ section=`uci_find_section network device name br-lan | head -n1`
 if [ -n "$section" ]; then
 	uci get "$section.ports" | grep -wq docker-lan-op || uci add_list "$section.ports=docker-lan-op"
 else
-	ifnames="`uci get network.lan.device`"
+	ifnames="`uci get network.lan.ifname`"
 	if [ -n "$ifnames" ]; then
 		echo "$ifnames" | grep -wq docker-lan-op || {
 			ifnames="$ifnames docker-lan-op"
-			uci set network.lan.device="$ifnames"
+			uci set network.lan.ifname="$ifnames"
 			uci set network.lan.type='bridge'
 		}
 	else
